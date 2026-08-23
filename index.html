@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>렉시오 온라인 v9</title>
+<style>
+  :root{
+    --bg:#0d3b2e; --panel:#123f33; --panel2:#0a2f25; --text:#f4f7f6; --muted:#b7ccc5;
+    --accent:#f6c453; --danger:#ff7f7f; --ok:#70df9a; --card:#fff; --ink:#151515;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(circle at top,#165844,#0a2e24 65%);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;min-height:100vh}
+  .app{max-width:1050px;margin:auto;padding:12px}
+  h1{font-size:22px;margin:4px 0 10px}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  button{border:0;border-radius:12px;padding:11px 15px;font-weight:800;font-size:15px;cursor:pointer}
+  .primary{background:var(--accent);color:#222}.secondary{background:#dce8e3;color:#133a2e}.danger{background:#b83f3f;color:#fff}
+  .grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+  @media(min-width:780px){.grid{grid-template-columns:2fr 1fr}}
+  .panel{background:rgba(10,36,29,.84);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:12px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+  .players{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+  .player{background:rgba(255,255,255,.07);padding:9px;border-radius:12px;text-align:center}
+  .player.turn{outline:2px solid var(--accent)}
+  .center{min-height:160px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+  .lastcards{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+  .playedArea{margin:10px 0 4px;background:rgba(0,0,0,.18);border-radius:14px;padding:10px}
+  .playedTitle{font-weight:900;margin-bottom:7px}
+  .playedHistory{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+  .playedTurn{min-width:max-content;background:rgba(255,255,255,.06);border-radius:10px;padding:7px}
+  .playedName{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .playedCards{display:flex;gap:3px}
+  .tracker{margin-top:10px;background:rgba(0,0,0,.18);border-radius:14px;padding:10px}
+  .trackerTitle{font-weight:900;margin-bottom:7px}
+  .trackerGrid{display:grid;grid-template-columns:repeat(13,minmax(38px,1fr));gap:4px;overflow-x:auto;padding-bottom:4px}
+  .trackCol{display:flex;flex-direction:column;gap:3px;align-items:center}
+  .trackNum{font-size:11px;font-weight:900;color:var(--muted)}
+  .trackCard{width:36px;height:28px;border-radius:6px;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;transition:.15s}
+  .trackCard.played{opacity:.18;filter:grayscale(1);text-decoration:line-through}
+  .trackCard.mine{outline:2px solid var(--accent)}
+  .hand{display:flex;gap:3px;overflow-x:auto;padding:16px 4px 10px;min-height:145px;align-items:flex-end}
+  .card{
+    width:64px;min-width:64px;height:96px;background:var(--card);border-radius:9px;border:1px solid #cfcfcf;color:var(--ink);
+    display:flex;flex-direction:column;justify-content:space-between;padding:6px;box-shadow:0 3px 8px rgba(0,0,0,.25);
+    transition:.12s transform,.12s box-shadow;user-select:none
+  }
+  .card.small{width:50px;min-width:50px;height:75px;font-size:13px}
+  .card.sel{transform:translateY(-14px);box-shadow:0 8px 14px rgba(0,0,0,.35);outline:3px solid var(--accent)}
+  .rank{font-size:20px;font-weight:900}.suit{font-size:25px;text-align:right}
+  .cloud{color:#111111}.star{color:#c98a00}.moon{color:#159447}.sun{color:#e35d2f}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}
+  .status{font-weight:800;color:var(--accent);margin:4px 0}.muted{color:var(--muted);font-size:13px}
+  .log{height:190px;overflow:auto;background:rgba(0,0,0,.22);padding:8px;border-radius:10px;font-size:13px;line-height:1.55}
+  .prob{display:grid;gap:7px}.probRow{background:rgba(255,255,255,.06);padding:8px;border-radius:10px}
+  .meter{height:8px;background:#25493f;border-radius:999px;overflow:hidden;margin-top:5px}.fill{height:100%;background:var(--accent)}
+  .rules{font-size:13px;line-height:1.6}.badge{display:inline-block;background:#285749;padding:3px 7px;border-radius:999px;margin:2px;font-size:12px}
+  .winner{font-size:30px;font-weight:1000;color:var(--accent)}
+  .notice{background:#613b14;color:#ffebbd;padding:8px;border-radius:10px;font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <h1 style="flex:1">🃏 렉시오 온라인 v9</h1>
+    <button class="secondary" id="newBtn">혼자 하기</button>
+    <button class="primary" id="createRoomBtn">온라인 방 만들기</button>
+    <button class="secondary" id="joinRoomBtn">방 참가</button>
+  </div>
+
+  <div class="grid">
+    <section class="panel">
+      <div id="onlineInfo" class="notice" style="display:none"></div>
+      <div class="players" id="players"></div>
+      <div class="playedArea">
+        <div class="playedTitle">지금까지 나온 카드</div>
+        <div class="playedHistory" id="playedHistory"><span class="muted">아직 나온 카드가 없습니다.</span></div>
+      </div>
+      <div class="tracker">
+        <div class="trackerTitle">전체 카드판 <span class="muted">— 나온 카드는 흐리게 표시</span></div>
+        <div class="trackerGrid" id="trackerGrid"></div>
+      </div>
+      <div class="center">
+        <div class="status" id="status">게임 준비 중…</div>
+        <div class="muted" id="trickInfo"></div>
+        <div class="lastcards" id="lastcards"></div>
+      </div>
+
+      <div class="muted">내 패 — 카드를 눌러 선택하세요</div>
+      <div class="hand" id="hand"></div>
+
+      <div class="controls">
+        <button class="primary" id="playBtn">선택한 카드 내기</button>
+        <button class="secondary" id="passBtn">패스</button>
+        <button class="secondary" id="hintBtn">추천</button>
+      </div>
+      <div id="playError" style="min-height:22px;margin-top:6px;color:#ffb0b0;font-weight:800"></div>
+      <div class="notice" id="notice">기본 규칙: 3구름 보유자가 첫 선. 숫자 강도는 3&lt;4&lt;…&lt;13&lt;1&lt;2, 무늬는 구름&lt;별&lt;달&lt;해 순입니다.</div>
+    </section>
+
+    <aside class="panel">
+      <b>상대 패 위험도 추정</b>
+      <div class="muted" style="margin:5px 0 9px">현재 내가 선택한 조합보다 높은 카드를 상대가 갖고 있을 가능성을 '보이지 않은 카드' 기준으로 근사합니다.</div>
+      <div class="prob" id="prob"></div>
+
+      <div style="height:10px"></div>
+      <b>게임 기록</b>
+      <div class="log" id="log"></div>
+
+      <div style="height:10px"></div>
+      <details>
+        <summary><b>현재 구현 규칙</b></summary>
+        <div class="rules">
+          <span class="badge">4인 / 13장</span><span class="badge">3구름 선</span><span class="badge">AI 3명</span><br>
+          같은 장수끼리만 비교합니다. 1장, 2장(페어), 3장(트리플), 5장 조합을 지원합니다.
+          5장은 스트레이트, 플러시, 풀하우스, 포카드+1, 스트레이트 플러시 순입니다.
+          모두 패스하면 마지막으로 낸 사람이 새 판을 시작합니다.
+        </div>
+      </details>
+    </aside>
+  </div>
+</div>
+
+<script>
+const SUITS = [
+  {k:'cloud', name:'구름', sym:'☁'},
+  {k:'star',  name:'별',   sym:'★'},
+  {k:'moon',  name:'달',   sym:'☾'},
+  {k:'sun',   name:'해',   sym:'☀'}
+];
+const RANKS = ['3','4','5','6','7','8','9','10','11','12','13','1','2'];
+let NAMES = ['나','동채','로희','정미'];
+let playerTypes=['human','ai','ai','ai'];
+let onlineMode=false, roomCode=null, mySeat=0, isHost=false, db=null, roomUnsub=null, syncing=false;
+let hands=[], turn=0, selected=new Set(), lastPlay=null, lastPlayer=-1, passes=0, gameOver=false, logLines=[], firstMove=true, playedHistory=[];
+
+async function initFirebase(){
+  if(db) return db;
+  const appMod=await import("https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js");
+  const dbMod=await import("https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js");
+  const firebaseConfig={
+    apiKey:"AIzaSyB7M6E1v7h-b6h-6L1PVXnNGU_vN_6i6dg",
+    authDomain:"lexio-1bca6.firebaseapp.com",
+    projectId:"lexio-1bca6",
+    storageBucket:"lexio-1bca6.firebasestorage.app",
+    messagingSenderId:"575596702985",
+    appId:"1:575596702985:web:7bda82a9ddb6f9a82677d8",
+    databaseURL:"https://lexio-1bca6-default-rtdb.asia-southeast1.firebasedatabase.app"
+  };
+  const app=appMod.initializeApp(firebaseConfig);
+  db=dbMod.getDatabase(app); window.FDB=dbMod; return db;
+}
+function roomState(){return {hands,turn,lastPlay,lastPlayer,passes,gameOver,logLines,firstMove,playedHistory,NAMES,playerTypes,started:true,updatedAt:Date.now()}}
+async function pushState(){if(!onlineMode||syncing)return; await initFirebase(); await window.FDB.set(window.FDB.ref(db,'rooms/'+roomCode+'/game'),roomState())}
+function applyState(g){if(!g)return; syncing=true; hands=g.hands||hands;turn=g.turn??turn;lastPlay=g.lastPlay??null;lastPlayer=g.lastPlayer??-1;passes=g.passes??0;gameOver=!!g.gameOver;logLines=g.logLines||[];firstMove=!!g.firstMove;playedHistory=g.playedHistory||[];NAMES=g.NAMES||NAMES;playerTypes=g.playerTypes||playerTypes;selected.clear();syncing=false;render();renderLog();if(isHost)maybeRunAI()}
+async function watchRoom(){await initFirebase(); if(roomUnsub)roomUnsub(); roomUnsub=window.FDB.onValue(window.FDB.ref(db,'rooms/'+roomCode),snap=>{const r=snap.val();if(!r)return;if(r.game)applyState(r.game);renderOnline(r)});}
+function renderOnline(r){const el=document.getElementById('onlineInfo');if(!onlineMode){el.style.display='none';return}el.style.display='block';let humans=r&&r.players?Object.values(r.players).filter(Boolean).length:1;el.innerHTML=`방 코드 <b>${roomCode}</b> · 사람 ${humans}명 / AI ${4-humans}명 ${isHost?'<button id="startOnlineBtn" class="primary" style="margin-left:8px">게임 시작/재시작</button>':''}`;const b=document.getElementById('startOnlineBtn');if(b)b.onclick=startOnlineGame;}
+async function createRoom(){await initFirebase();onlineMode=true;isHost=true;mySeat=0;roomCode=String(Math.floor(1000+Math.random()*9000));NAMES=['방장','플레이어2','플레이어3','플레이어4'];playerTypes=['human','ai','ai','ai'];await window.FDB.set(window.FDB.ref(db,'rooms/'+roomCode),{host:0,players:{0:{name:'방장',seat:0}},createdAt:Date.now()});await watchRoom();alert('방 코드: '+roomCode+'\n친구에게 이 코드를 알려주세요.');}
+async function joinRoom(){let code=prompt('방 코드 4자리를 입력하세요.');if(!code)return;await initFirebase();const rr=window.FDB.ref(db,'rooms/'+code);const snap=await window.FDB.get(rr);if(!snap.exists()){alert('없는 방입니다.');return}let r=snap.val(), ps=r.players||{};let seat=[0,1,2,3].find(x=>!ps[x]);if(seat===undefined){alert('사람 4명이 모두 찼습니다.');return}onlineMode=true;isHost=false;roomCode=code;mySeat=seat;await window.FDB.set(window.FDB.ref(db,`rooms/${code}/players/${seat}`),{name:'플레이어'+(seat+1),seat});await watchRoom();}
+async function startOnlineGame(){if(!isHost)return;const snap=await window.FDB.get(window.FDB.ref(db,'rooms/'+roomCode+'/players'));let ps=snap.val()||{};let humanSeats=Object.keys(ps).map(Number);NAMES=[0,1,2,3].map(i=>ps[i]?.name||('AI '+(i+1)));playerTypes=[0,1,2,3].map(i=>humanSeats.includes(i)?'human':'ai');gameOver=false;selected.clear();logLines=[];lastPlay=null;lastPlayer=-1;passes=0;firstMove=true;playedHistory=[];let d=shuffle(deck());hands=[[],[],[],[]];d.forEach((c,i)=>hands[i%4].push(c));hands.forEach(sortHand);turn=hands.findIndex(h=>h.some(c=>c.r==='3'&&c.s==='cloud'));log(`새 게임. <b>${NAMES[turn]}</b>가 3☁ 보유 → 선`);render();await pushState();maybeRunAI();}
+function maybeRunAI(){if(!onlineMode||!isHost||gameOver)return;if(playerTypes[turn]==='ai')setTimeout(aiTurn,450)}
+
+function deck(){
+  let d=[];
+  RANKS.forEach((r,ri)=>SUITS.forEach((s,si)=>d.push({r,ri,s:s.k,si,id:r+'_'+s.k})));
+  return d;
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function cardPower(c){return c.ri*4+c.si}
+function sortHand(h){h.sort((a,b)=>cardPower(a)-cardPower(b))}
+function rankCounts(cs){let m={};cs.forEach(c=>m[c.ri]=(m[c.ri]||0)+1);return m}
+function classify(cs){
+  let n=cs.length, sorted=[...cs].sort((a,b)=>cardPower(a)-cardPower(b));
+  if(n===1) return {type:'single', level:1, key:cardPower(sorted[0]), name:'싱글'};
+  if(n===2 && sorted[0].ri===sorted[1].ri) return {type:'pair',level:2,key:Math.max(...sorted.map(cardPower)),name:'페어'};
+  if(n===3 && sorted.every(c=>c.ri===sorted[0].ri)) return {type:'triple',level:3,key:sorted[0].ri,name:'트리플'};
+  if(n!==5) return null;
+
+  const cnt=rankCounts(sorted), vals=Object.keys(cnt).map(Number).sort((a,b)=>a-b);
+  const flush=sorted.every(c=>c.si===sorted[0].si);
+  let straight=false, hi=-1;
+  if(vals.length===5){
+    if(vals[4]-vals[0]===4){straight=true;hi=vals[4]}
+    // A2345는 이 버전에서 일반 스트레이트로 취급하지 않음
+  }
+  let groups=Object.entries(cnt).map(([r,c])=>({r:+r,c})).sort((a,b)=>b.c-a.c||b.r-a.r);
+  if(straight && flush) return {type:'straightflush',level:9,key:hi*4+Math.max(...sorted.filter(c=>c.ri===hi).map(c=>c.si)),name:'스트레이트 플러시'};
+  if(groups[0].c===4) return {type:'four',level:8,key:groups[0].r,name:'포카드'};
+  if(groups[0].c===3 && groups[1].c===2) return {type:'fullhouse',level:7,key:groups[0].r,name:'풀하우스'};
+  if(flush) return {type:'flush',level:6,key:Math.max(...sorted.map(cardPower)),name:'플러시'};
+  if(straight) return {type:'straight',level:5,key:hi*4+Math.max(...sorted.filter(c=>c.ri===hi).map(c=>c.si)),name:'스트레이트'};
+  return null;
+}
+function beats(a,b){
+  let ca=classify(a), cb=classify(b);
+  if(!ca||!cb||a.length!==b.length) return false;
+  if(a.length===5){
+    if(ca.level!==cb.level) return ca.level>cb.level;
+    return ca.key>cb.key;
+  }
+  return ca.type===cb.type && ca.key>cb.key;
+}
+function validLead(cs){return !!classify(cs)}
+function contains3Cloud(cs){return cs.some(c=>c.r==='3'&&c.s==='cloud')}
+function mustFirst(){return firstMove}
+function legalPlay(cs){
+  if(!validLead(cs)) return false;
+  if(mustFirst() && !contains3Cloud(cs)) return false;
+  if(lastPlay===null) return true;
+  return beats(cs,lastPlay);
+}
+function cardHTML(c,small=false,sel=false){
+  let s=SUITS[c.si];
+  return `<div class="card ${small?'small':''} ${sel?'sel':''}" data-id="${c.id}">
+    <div class="rank ${s.k}">${c.r}</div><div class="suit ${s.k}">${s.sym}</div>
+  </div>`;
+}
+function log(msg){logLines.push(msg);if(logLines.length>80)logLines.shift();renderLog()}
+function renderLog(){document.getElementById('log').innerHTML=logLines.slice().reverse().map(x=>`<div>${x}</div>`).join('')}
+function renderTracker(){
+  const playedIds=new Set();
+  playedHistory.forEach(x=>x.cs.forEach(c=>playedIds.add(c.id)));
+  const myIds=new Set((hands[mySeat]||[]).map(c=>c.id));
+  const grid=document.getElementById('trackerGrid');
+  if(!grid)return;
+  grid.innerHTML=RANKS.map((r,ri)=>{
+    const cards=SUITS.map((s,si)=>{
+      const id=r+'_'+s.k;
+      const classes=['trackCard',s.k];
+      if(playedIds.has(id))classes.push('played');
+      else if(myIds.has(id))classes.push('mine');
+      return `<div class="${classes.join(' ')}" title="${r}${s.name}">${s.sym}</div>`;
+    }).join('');
+    return `<div class="trackCol"><div class="trackNum">${r}</div>${cards}</div>`;
+  }).join('');
+}
+function render(){
+  document.getElementById('players').innerHTML=NAMES.map((n,p)=>({n,p})).filter(x=>x.p!==mySeat).map(({n,p})=>`<div class="player ${turn===p?'turn':''}"><b>${n}</b><br><span class="muted">${(hands[p]||[]).length}장 · ${playerTypes[p]==='ai'?'AI':'사람'}</span></div>`).join('');
+  const st=document.getElementById('status');
+  if(gameOver) return;
+  st.textContent = turn===mySeat ? '내 차례입니다.' : `${NAMES[turn]} 차례입니다.`;
+  document.getElementById('trickInfo').textContent = lastPlay ? `${NAMES[lastPlayer]}: ${classify(lastPlay).name} ${lastPlay.length}장` : '새 판 — 원하는 조합을 낼 수 있습니다.';
+  document.getElementById('lastcards').innerHTML = lastPlay ? lastPlay.map(c=>cardHTML(c,true,false)).join('') : '';
+  const ph=document.getElementById('playedHistory');
+  ph.innerHTML = playedHistory.length ? playedHistory.map(x=>`<div class="playedTurn"><div class="playedName">${NAMES[x.p]}</div><div class="playedCards">${x.cs.map(c=>cardHTML(c,true,false)).join('')}</div></div>`).join('') : '<span class="muted">아직 나온 카드가 없습니다.</span>';
+  ph.scrollLeft=ph.scrollWidth;
+  document.getElementById('hand').innerHTML=(hands[mySeat]||[]).map(c=>cardHTML(c,false,selected.has(c.id))).join('');
+  document.querySelectorAll('#hand .card').forEach(el=>el.onclick=()=>{if(turn!==mySeat||gameOver)return; document.getElementById('playError').textContent=''; let id=el.dataset.id;if(selected.has(id))selected.delete(id);else selected.add(id);render();renderProb()});
+  document.getElementById('passBtn').disabled = turn!==mySeat || lastPlay===null || gameOver;
+  document.getElementById('playBtn').disabled = turn!==mySeat || gameOver;
+  renderProb();
+  renderTracker();
+}
+function selectedCards(){return hands[mySeat].filter(c=>selected.has(c.id))}
+function removeCards(p,cs){let ids=new Set(cs.map(c=>c.id));hands[p]=hands[p].filter(c=>!ids.has(c.id))}
+function afterPlay(p,cs){
+  removeCards(p,cs); lastPlay=[...cs]; lastPlayer=p; passes=0; firstMove=false; playedHistory.push({p,cs:[...cs]});
+  log(`<b>${NAMES[p]}</b> → ${classify(cs).name} ${cs.map(c=>c.r+SUITS[c.si].sym).join(' ')}`);
+  if(hands[p].length===0){gameOver=true;document.getElementById('status').innerHTML=`<span class="winner">${NAMES[p]} 승리!</span>`;render();if(onlineMode)pushState();return}
+  turn=(p+1)%4;render();
+  if(onlineMode){pushState();if(isHost)maybeRunAI()}else if(turn!==0)setTimeout(aiTurn,450);
+}
+function doPass(p){
+  passes++; log(`<span class="muted">${NAMES[p]} 패스</span>`);
+  if(passes>=3){
+    turn=lastPlayer; lastPlay=null; passes=0;
+    log(`↻ <b>${NAMES[turn]}</b> 새 판 시작`);
+  }else turn=(p+1)%4;
+  render(); if(onlineMode){pushState();if(isHost)maybeRunAI()}else if(turn!==0)setTimeout(aiTurn,420);
+}
+function combos(arr,n){
+  let out=[];function rec(start,pick){if(pick.length===n){out.push([...pick]);return}for(let i=start;i<arr.length;i++){pick.push(arr[i]);rec(i+1,pick);pick.pop()}}rec(0,[]);return out;
+}
+function legalCombos(hand){
+  let ns = lastPlay ? [lastPlay.length] : [1,2,3,5], out=[];
+  ns.forEach(n=>{
+    if(n>hand.length)return;
+    for(const cs of combos(hand,n)){
+      if(legalPlay(cs))out.push(cs);
+    }
+  });
+  return out.sort((a,b)=>{
+    let ca=classify(a),cb=classify(b);
+    if(a.length===5 && ca.level!==cb.level)return ca.level-cb.level;
+    return ca.key-cb.key;
+  });
+}
+function aiTurn(){
+  if(gameOver||(onlineMode&&(!isHost||playerTypes[turn]!=='ai'))||(!onlineMode&&turn===0))return;
+  let p=turn, opts=legalCombos(hands[p]);
+  if(opts.length===0){doPass(p);return}
+  // 낮은 조합 우선. 손패가 적으면 조금 공격적으로 강한 패 허용.
+  let idx=0;
+  if(hands[p].length<=4 && opts.length>1) idx=Math.min(1,opts.length-1);
+  afterPlay(p,opts[idx]);
+}
+function newGame(){
+  onlineMode=false;roomCode=null;mySeat=0;isHost=false;playerTypes=['human','ai','ai','ai'];NAMES=['나','동채','로희','정미'];if(roomUnsub){roomUnsub();roomUnsub=null}const oi=document.getElementById('onlineInfo');if(oi)oi.style.display='none';
+  gameOver=false;selected.clear();logLines=[];lastPlay=null;lastPlayer=-1;passes=0;firstMove=true;playedHistory=[];
+  let d=shuffle(deck());hands=[[],[],[],[]];
+  d.forEach((c,i)=>hands[i%4].push(c));hands.forEach(sortHand);
+  let owner=hands.findIndex(h=>h.some(c=>c.r==='3'&&c.s==='cloud'));
+  turn=owner;
+  log(`새 게임. <b>${NAMES[owner]}</b>가 3☁ 보유 → 선`);
+  render();
+  if(turn!==0)setTimeout(aiTurn,500);
+}
+function renderProb(){
+  const box=document.getElementById('prob'), cs=selectedCards();
+  if(cs.length===0 || !classify(cs)){box.innerHTML='<div class="muted">내 패에서 조합을 선택하면 표시됩니다.</div>';return}
+  // 알려진 카드 = 내 손 + 현재 바닥. 나머지를 각 상대의 손 크기만큼 무작위로 보유한다고 보는 근사.
+  let known=new Set(hands[mySeat].map(c=>c.id)); if(lastPlay) lastPlay.forEach(c=>known.add(c.id));
+  let unseen=deck().filter(c=>!known.has(c.id));
+  // higher candidate cards/combinations를 정확히 세기 어렵기 때문에 몬테카를로 350회
+  let target=cs, reps=350, rows=[];
+  for(let p=0;p<4;p++){if(p===mySeat)continue;
+    let hit=0;
+    for(let r=0;r<reps;r++){
+      let samp=shuffle([...unseen]).slice(0,hands[p].length);
+      let ns=[target.length], found=false;
+      if(target.length<=3){
+        for(const x of combos(samp,target.length)){if(beats(x,target)){found=true;break}}
+      }else{
+        // 5장 조합은 조합폭발 방지: 최대 220개만 검사
+        let cc=combos(samp,5), lim=Math.min(cc.length,220);
+        for(let i=0;i<lim;i++){if(beats(cc[i],target)){found=true;break}}
+      }
+      if(found)hit++;
+    }
+    let pct=Math.round(hit/reps*100);
+    rows.push(`<div class="probRow"><b>${NAMES[p]}</b> <span style="float:right">${pct}%</span><div class="meter"><div class="fill" style="width:${pct}%"></div></div></div>`);
+  }
+  box.innerHTML=rows.join('');
+}
+document.getElementById('playBtn').onclick=()=>{
+  if(turn!==mySeat||gameOver)return;
+  let cs=selectedCards();
+  if(!legalPlay(cs)){
+    let msg;
+    if(cs.length===0) msg='낼 카드를 먼저 선택하세요.';
+    else if(mustFirst()) msg='첫 수에는 반드시 3구름을 포함해야 합니다.';
+    else if(lastPlay && cs.length!==lastPlay.length) msg=`앞 패와 같은 ${lastPlay.length}장을 내야 합니다.`;
+    else msg='현재 나온 패보다 높은 조합만 낼 수 있습니다.';
+    document.getElementById('playError').textContent='⚠ '+msg;
+    log(`<span style="color:#ffb0b0">⚠ ${msg}</span>`);renderLog();return;
+  }
+  document.getElementById('playError').textContent='';
+  selected.clear();afterPlay(mySeat,cs);
+};
+document.getElementById('passBtn').onclick=()=>{if(turn===mySeat&&lastPlay) {selected.clear();doPass(mySeat)}};
+document.getElementById('hintBtn').onclick=()=>{
+  if(turn!==mySeat||gameOver)return;
+  let opts=legalCombos(hands[mySeat]);
+  if(!opts.length){log('💡 추천: 패스');return}
+  selected=new Set(opts[0].map(c=>c.id));render();log(`💡 추천: ${classify(opts[0]).name} ${opts[0].map(c=>c.r+SUITS[c.si].sym).join(' ')}`);
+};
+document.getElementById('newBtn').onclick=newGame;
+document.getElementById('createRoomBtn').onclick=createRoom;
+document.getElementById('joinRoomBtn').onclick=joinRoom;
+newGame();
+</script>
+</body>
+</html>
