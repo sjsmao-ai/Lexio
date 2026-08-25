@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>렉시오 온라인 · 대기실/참가승인/실시간채팅</title>
+<title>렉시오 온라인 · 멀티플레이 수정판</title>
 <style>
 :root{--felt:#0e4a30;--felt2:#092f20;--wood:#4a2817;--wood2:#251208;--gold:#e8bd58;--cream:#f6f1e7;--ink:#171717;--muted:#b9c8bd;--sun:#db3d2d;--moon:#1e7c3d;--star:#d36b10;--cloud:#111;}
 *{box-sizing:border-box} html,body{margin:0;min-height:100%;background:#081b13;color:#f7f2e8;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif} button{font:inherit}
@@ -56,6 +56,7 @@ const SUITS=[{k:'cloud',name:'구름'},{k:'star',name:'별'},{k:'moon',name:'달
 const RANKS=['3','4','5','6','7','8','9','10','11','12','13','1','2'];
 let NAMES=['나','동채','로희','정미'],playerTypes=['human','ai','ai','ai'];
 let onlineMode=false,roomCode=null,mySeat=0,isHost=false,db=null,roomUnsub=null,syncing=false,pendingJoinUnsub=null,lastPlayersSnapshot={};
+const CLIENT_ID=(()=>{let v=localStorage.getItem('lexioClientId');if(!v){v='c_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);localStorage.setItem('lexioClientId',v)}return v})();
 let chatUnsub=null,chatOpen=false,chatUnread=0,chatSeenKeys=new Set();
 let hands=[],turn=0,selected=new Set(),lastPlay=null,lastPlayer=-1,passes=0,gameOver=false,logLines=[],firstMove=true,playedHistory=[];
 function suitIcon(k){const col={sun:'#db3d2d',moon:'#1e7c3d',star:'#d36b10',cloud:'#111'}[k]; if(k==='sun')return `<svg viewBox="0 0 100 100"><g fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round"><circle cx="50" cy="50" r="21"/><path d="M50 5v14M50 81v14M5 50h14M81 50h14M18 18l10 10M72 72l10 10M82 18L72 28M28 72L18 82"/></g></svg>`; if(k==='moon')return `<svg viewBox="0 0 100 100"><path fill="${col}" d="M69 10a42 42 0 1 0 18 68A35 35 0 1 1 69 10z"/></svg>`; if(k==='star')return `<svg viewBox="0 0 100 100"><path fill="none" stroke="${col}" stroke-width="8" stroke-linejoin="round" d="M50 7l12 27 29 3-22 20 7 29-26-15-26 15 7-29L9 37l29-3z"/></svg>`; return `<svg viewBox="0 0 100 100"><path fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" d="M18 62c-9 0-14-7-14-15s7-15 16-15c4-14 17-22 31-20 13 2 22 12 24 24 11 0 20 8 20 19 0 10-8 18-18 18H20"/><path fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" d="M50 8v16M44 12l6-7 6 7"/></svg>`}
@@ -79,6 +80,29 @@ function playerEntries(r){return Object.entries(r.players||{}).map(([seat,p])=>[
 function freeSeat(r){const ps=r.players||{};return [0,1,2,3].find(x=>!ps[x])}
 function roomIsPlaying(r){return r.status==='playing'||!!r.game}
 function safeName(v){return escChat(String(v||'참가자').slice(0,10))}
+function resolveMySeatFromRoom(r){
+  const entries=playerEntries(r);
+  const mine=entries.find(([,p])=>p&&p.clientId===CLIENT_ID);
+  if(mine){
+    mySeat=mine[0];
+    isHost=(mySeat===Number(r.host??0));
+    return true;
+  }
+  return false;
+}
+function syncNamesFromRoom(r){
+  const ps=r.players||{};
+  for(let i=0;i<4;i++){
+    if(ps[i]?.name){
+      NAMES[i]=ps[i].name;
+      playerTypes[i]='human';
+    }else if(!roomIsPlaying(r)){
+      NAMES[i]='AI '+(i+1);
+      playerTypes[i]='ai';
+    }
+  }
+}
+
 
 async function setReady(ready){
   if(!onlineMode||isHost||!roomCode)return;
@@ -115,7 +139,7 @@ async function approveJoinRequest(reqId){
   const ok=confirm(`${req.name}님을 승인하면 현재 게임을 종료하고 카드를 새로 섞어 처음부터 시작합니다.\n\n승인할까요?`);
   if(!ok)return;
   const updates={};
-  updates[`players/${seat}`]={name:req.name,seat,ready:true,joinedAt:Date.now()};
+  updates[`players/${seat}`]={name:req.name,seat,ready:true,joinedAt:Date.now(),clientId:req.clientId||null};
   updates[`joinRequests/${reqId}/status`]='approved';
   updates[`joinRequests/${reqId}/seat`]=seat;
   updates[`joinRequests/${reqId}/resolvedAt`]=window.FDB.serverTimestamp();
@@ -137,7 +161,7 @@ function renderOnline(r){
   const readyButton=(!isHost&&!playing)?`<button class="readyBtn ${(r.players?.[mySeat]?.ready)?'':'off'}" id="readyToggleBtn">${r.players?.[mySeat]?.ready?'준비 취소':'준비'}</button>`:'';
   const startButton=(isHost&&!playing)?'<button class="miniBtn" id="startOnlineBtn" style="padding:3px 7px">게임 시작</button>':'';
   const copyButton=isHost?'<button class="miniBtn" id="copyInviteBtn" style="padding:3px 7px">초대 링크 복사</button>':'';
-  oi.innerHTML=`방 코드 <b>${roomCode}</b> · ${playing?'<b>게임 진행 중</b>':'대기실'} ${copyButton} ${startButton} ${readyButton}<div class="lobbyStatus">${chips}</div>${reqHtml}`;
+  oi.innerHTML=`방 코드 <b>${roomCode}</b> · ${playing?'<b>게임 진행 중</b>':'대기실'} · 나는 <b>${safeName(r.players?.[mySeat]?.name||NAMES[mySeat])}</b> (${mySeat+1}번 자리) ${copyButton} ${startButton} ${readyButton}<div class="lobbyStatus">${chips}</div>${reqHtml}`;
 
   const b=document.getElementById('startOnlineBtn'); if(b)b.onclick=()=>startOnlineGame(false);
   const rb=document.getElementById('readyToggleBtn'); if(rb)rb.onclick=()=>setReady(!r.players?.[mySeat]?.ready);
@@ -171,6 +195,8 @@ async function watchRoom(){
   if(roomUnsub)roomUnsub();
   roomUnsub=window.FDB.onValue(window.FDB.ref(db,'rooms/'+roomCode),snap=>{
     const r=snap.val();if(!r)return;
+    resolveMySeatFromRoom(r);
+    syncNamesFromRoom(r);
     if(r.game)applyState(r.game);
     renderOnline(r);
     handlePlayerPresence(r);
@@ -186,9 +212,9 @@ async function createRoom(){
   onlineMode=true;isHost=true;mySeat=0;
   roomCode=String(Math.floor(1000+Math.random()*9000));
   NAMES=[name,'AI 2','AI 3','AI 4'];playerTypes=['human','ai','ai','ai'];
-  lastPlayersSnapshot={0:{name,seat:0,ready:true}};
+  lastPlayersSnapshot={0:{name,seat:0,ready:true,clientId:CLIENT_ID}};
   await window.FDB.set(window.FDB.ref(db,'rooms/'+roomCode),{
-    host:0,status:'lobby',players:{0:{name,seat:0,ready:true,joinedAt:Date.now()}},createdAt:Date.now()
+    host:0,status:'lobby',players:{0:{name,seat:0,ready:true,joinedAt:Date.now(),clientId:CLIENT_ID}},createdAt:Date.now()
   });
   await watchRoom();
   const url=roomInviteUrl(roomCode);
@@ -230,7 +256,7 @@ async function joinRoom(codeArg,nameArg){
   if(seat===undefined){alert('사람 4명이 모두 찼습니다.');return}
   if(roomIsPlaying(r)){
     const reqRef=window.FDB.push(window.FDB.ref(db,`rooms/${code}/joinRequests`));
-    await window.FDB.set(reqRef,{name,status:'pending',requestedAt:window.FDB.serverTimestamp()});
+    await window.FDB.set(reqRef,{name,clientId:CLIENT_ID,status:'pending',requestedAt:window.FDB.serverTimestamp()});
     document.getElementById('joinOk').disabled=true;
     let w=document.getElementById('joinWaiting');
     if(!w){w=document.createElement('div');w.id='joinWaiting';w.className='waitingMsg';document.querySelector('#joinModal .modal').appendChild(w)}
@@ -239,7 +265,7 @@ async function joinRoom(codeArg,nameArg){
     return;
   }
   onlineMode=true;isHost=false;roomCode=code;mySeat=seat;NAMES[seat]=name;
-  await window.FDB.set(window.FDB.ref(db,`rooms/${code}/players/${seat}`),{name,seat,ready:false,joinedAt:Date.now()});
+  await window.FDB.set(window.FDB.ref(db,`rooms/${code}/players/${seat}`),{name,seat,ready:false,joinedAt:Date.now(),clientId:CLIENT_ID});
   closeJoinModal();
   await watchRoom();
 }
