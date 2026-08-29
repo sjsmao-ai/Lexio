@@ -20,7 +20,7 @@ body{background:radial-gradient(circle at 50% -20%,#175a3c,#071b13 62%)}
 .lower{display:grid;grid-template-columns:1fr;gap:7px;margin-top:7px}.panel{background:#101c16;border:1px solid #5a4531;border-radius:11px;padding:7px}.panelTitle{font-weight:900;font-size:12px;margin-bottom:5px}.prob{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.probRow{font-size:10px;background:#173024;border-radius:6px;padding:5px}.meter{height:5px;background:#31473d;border-radius:99px;overflow:hidden;margin-top:3px}.fill{height:100%;background:#d8b14e}.log{max-height:80px;overflow:auto;font-size:10px;color:#d7ddd8;line-height:1.45}.rules{font-size:10px;line-height:1.5;color:#c9d2cc}
 @media(min-width:760px){.felt{padding:12px}.opponents{gap:10px}.opp{padding:10px}.board{padding:12px}.allCards{gap:4px}.myArea{padding:12px}.card{max-height:112px}.card.small{width:42px;min-width:42px;height:62px}.lower{grid-template-columns:1fr 1fr}.probRow{font-size:12px}.log,.rules{font-size:12px}.boardTitle{font-size:18px}.status{font-size:19px}}
 
-.modalBack{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:99;padding:18px}.modalBack.show{display:flex}.modal{width:min(92vw,390px);background:#13271d;border:2px solid #755536;border-radius:16px;padding:16px;box-shadow:0 15px 50px #000}.modal h3{margin:0 0 12px;color:#f3cf65}.modal input{width:100%;padding:12px;margin:5px 0;border-radius:9px;border:1px solid #77664d;background:#f7f3e9;color:#111;font-size:16px}.modalBtns{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.modalBtns button{padding:10px;border-radius:9px;border:1px solid #765b3a;font-weight:900}.modalOk{background:#376e31;color:white}.modalCancel{background:#3d3d39;color:white}.inviteBox{margin-top:8px;padding:8px;background:#172f24;border-radius:8px;word-break:break-all;font-size:11px}.onlineInfo button{margin-left:5px}
+.modalBack{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:99;padding:18px}.modalBack.show{display:flex}.modal{width:min(92vw,390px);background:#13271d;border:2px solid #755536;border-radius:16px;padding:16px;box-shadow:0 15px 50px #000}.modal h3{margin:0 0 12px;color:#f3cf65}.modal input{width:100%;padding:12px;margin:5px 0;border-radius:9px;border:1px solid #77664d;background:#f7f3e9;color:#111;font-size:16px}.modalBtns{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.modalBtns button{padding:10px;border-radius:9px;border:1px solid #765b3a;font-weight:900}.modalOk{background:#376e31;color:white}.modalCancel{background:#3d3d39;color:white}.inviteBox{margin-top:8px;padding:8px;background:#172f24;border-radius:8px;word-break:break-all;font-size:11px}.onlineInfo button{margin-left:5px}.aiDifficulty{border:1px solid #6f5838;background:#151713;color:#f7f2e8;border-radius:10px;padding:7px 8px;font-weight:850;font-size:12px;max-width:112px}
 
 .chatFab{position:fixed;right:16px;bottom:18px;z-index:80;width:56px;height:56px;border-radius:50%;border:2px solid #b18448;background:#71421f;color:white;font-size:25px;box-shadow:0 6px 22px #0008;display:none}.chatFab.show{display:block}.chatBadge{position:absolute;right:-3px;top:-4px;min-width:21px;height:21px;padding:0 5px;border-radius:11px;background:#d43b2d;color:white;font-size:12px;line-height:21px;font-weight:950;display:none}.chatPanel{position:fixed;z-index:90;right:10px;bottom:10px;width:min(94vw,390px);height:min(68vh,540px);background:#10261c;border:2px solid #725235;border-radius:16px;box-shadow:0 16px 50px #000b;display:none;flex-direction:column;overflow:hidden}.chatPanel.show{display:flex}.chatHead{display:flex;align-items:center;gap:8px;padding:11px 12px;background:#1c2018;border-bottom:1px solid #60472f}.chatTitle{font-weight:950;flex:1}.chatClose{border:0;background:#403c34;color:#fff;border-radius:8px;width:34px;height:34px;font-size:20px}.chatMessages{flex:1;overflow-y:auto;padding:10px;background:#0b2b1d}.chatMsg{margin:0 0 8px;max-width:88%}.chatMsg.mine{margin-left:auto;text-align:right}.chatWho{font-size:10px;color:#aebdb2;margin-bottom:2px}.chatBubble{display:inline-block;text-align:left;background:#26372f;color:#fff;padding:8px 10px;border-radius:11px;font-size:14px;word-break:break-word;white-space:pre-wrap}.chatMsg.mine .chatBubble{background:#77601f;color:#fff8d8}.chatTime{font-size:9px;color:#83948a;margin-top:2px}.chatComposer{display:grid;grid-template-columns:1fr auto;gap:6px;padding:8px;background:#142219;border-top:1px solid #60472f}.chatInput{min-width:0;border:1px solid #6c5a41;background:#f7f3e9;color:#111;border-radius:9px;padding:11px;font-size:16px}.chatSend{border:1px solid #776044;background:#376e31;color:white;border-radius:9px;padding:0 15px;font-weight:950}.chatHint{font-size:10px;color:#a9b5ad;padding:0 10px 7px;background:#142219}
 
@@ -37,7 +37,7 @@ body{background:radial-gradient(circle at 50% -20%,#175a3c,#071b13 62%)}
 </style>
 </head>
 <body><div class="game"><div class="table"><div class="felt">
-<div class="topbar"><button class="miniBtn" id="newBtn">새 게임</button><div class="title">렉시오 (4인) · 전략 연습</div><button class="miniBtn primary" id="createRoomBtn">방 만들기</button><button class="miniBtn" id="joinRoomBtn">참가</button></div>
+<div class="topbar"><button class="miniBtn" id="newBtn">새 게임</button><select id="aiDifficulty" class="aiDifficulty" title="AI 난이도"><option value="beginner">초급</option><option value="medium">중급</option><option value="advanced">고급</option><option value="expert" selected>최상급</option></select><div class="title">렉시오 (4인) · 전략 연습</div><button class="miniBtn primary" id="createRoomBtn">방 만들기</button><button class="miniBtn" id="joinRoomBtn">참가</button></div>
 <div id="onlineInfo" class="onlineInfo"></div><div class="modalBack" id="joinModal"><div class="modal"><h3>방 참가</h3><input id="joinName" maxlength="10" placeholder="내 이름"><input id="joinCode" inputmode="numeric" maxlength="4" placeholder="방 코드 4자리"><div class="modalBtns"><button class="modalCancel" id="joinCancel">취소</button><button class="modalOk" id="joinOk">입장하기</button></div></div></div>
 <div class="opponents" id="players"></div>
 <div class="current"><div class="currentLabel">테이블 / 현재 카드</div><div class="status" id="status">게임 준비 중…</div><div class="trickInfo" id="trickInfo"></div><div class="lastcards" id="lastcards"></div></div>
@@ -55,6 +55,7 @@ body{background:radial-gradient(circle at 50% -20%,#175a3c,#071b13 62%)}
 const SUITS=[{k:'cloud',name:'구름'},{k:'star',name:'별'},{k:'moon',name:'달'},{k:'sun',name:'해'}];
 const RANKS=['3','4','5','6','7','8','9','10','11','12','13','1','2'];
 let NAMES=['나','동채','로희','정미'],playerTypes=['human','ai','ai','ai'];
+let aiDifficulty=localStorage.getItem('lexioAiDifficulty')||'expert';
 let onlineMode=false,roomCode=null,mySeat=0,isHost=false,db=null,roomUnsub=null,syncing=false,pendingJoinUnsub=null,lastPlayersSnapshot={};
 const CLIENT_ID=(()=>{let v=localStorage.getItem('lexioClientId');if(!v){v='c_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);localStorage.setItem('lexioClientId',v)}return v})();
 let chatUnsub=null,chatOpen=false,chatUnread=0,chatSeenKeys=new Set();
@@ -71,9 +72,9 @@ function closeChat(){chatOpen=false;document.getElementById('chatPanel').classLi
 function renderChat(messages){const box=document.getElementById('chatMessages');const items=Object.entries(messages||{}).sort((a,b)=>(a[1].ts||0)-(b[1].ts||0)).slice(-100);if(!items.length){box.innerHTML='<div class="empty">메시지가 아직 없습니다.</div>';return}let newCount=0;for(const [k,m] of items){if(!chatSeenKeys.has(k)){chatSeenKeys.add(k);if(!chatOpen&&m.seat!==mySeat)newCount++}}if(newCount){chatUnread+=newCount;updateChatBadge()}box.innerHTML=items.map(([k,m])=>{const mine=m.seat===mySeat;const d=new Date(m.ts||Date.now());const tm=d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});return `<div class="chatMsg ${mine?'mine':''}"><div class="chatWho">${escChat(m.name||'참가자')}</div><div class="chatBubble">${escChat(m.text||'')}</div><div class="chatTime">${tm}</div></div>`}).join('');if(chatOpen)setTimeout(()=>box.scrollTop=box.scrollHeight,0)}
 async function watchChat(){await initFirebase();if(chatUnsub)chatUnsub();chatSeenKeys.clear();chatUnread=0;updateChatBadge();const q=window.FDB.query(window.FDB.ref(db,`rooms/${roomCode}/chat`),window.FDB.limitToLast(100));chatUnsub=window.FDB.onValue(q,snap=>renderChat(snap.val()||{}));showChatButton(true)}
 async function sendChat(){if(!onlineMode||!roomCode)return;const input=document.getElementById('chatInput'),text=input.value.trim();if(!text)return;input.value='';await initFirebase();const ref=window.FDB.push(window.FDB.ref(db,`rooms/${roomCode}/chat`));await window.FDB.set(ref,{name:currentChatName(),seat:mySeat,text:text.slice(0,120),ts:window.FDB.serverTimestamp()})}
-function roomState(){return{hands,turn,lastPlay,lastPlayer,passes,gameOver,logLines,firstMove,playedHistory,NAMES,playerTypes,started:true,updatedAt:Date.now()}}
+function roomState(){return{hands,turn,lastPlay,lastPlayer,passes,gameOver,logLines,firstMove,playedHistory,NAMES,playerTypes,aiDifficulty,started:true,updatedAt:Date.now()}}
 async function pushState(){if(!onlineMode||syncing)return;await initFirebase();await window.FDB.set(window.FDB.ref(db,'rooms/'+roomCode+'/game'),roomState())}
-function applyState(g){if(!g)return;syncing=true;hands=g.hands||hands;turn=g.turn??turn;lastPlay=g.lastPlay??null;lastPlayer=g.lastPlayer??-1;passes=g.passes??0;gameOver=!!g.gameOver;logLines=g.logLines||[];firstMove=!!g.firstMove;playedHistory=g.playedHistory||[];NAMES=g.NAMES||NAMES;playerTypes=g.playerTypes||playerTypes;selected.clear();syncing=false;render();renderLog();if(isHost)maybeRunAI()}
+function applyState(g){if(!g)return;syncing=true;hands=g.hands||hands;turn=g.turn??turn;lastPlay=g.lastPlay??null;lastPlayer=g.lastPlayer??-1;passes=g.passes??0;gameOver=!!g.gameOver;logLines=g.logLines||[];firstMove=!!g.firstMove;playedHistory=g.playedHistory||[];NAMES=g.NAMES||NAMES;playerTypes=g.playerTypes||playerTypes;if(g.aiDifficulty){aiDifficulty=g.aiDifficulty;const ds=document.getElementById('aiDifficulty');if(ds)ds.value=aiDifficulty}selected.clear();syncing=false;render();renderLog();if(isHost)maybeRunAI()}
 
 function roomInviteUrl(code){let u=new URL(location.href);u.searchParams.set('room',code);return u.toString()}
 function playerEntries(r){return Object.entries(r.players||{}).map(([seat,p])=>[Number(seat),p]).sort((a,b)=>a[0]-b[0])}
@@ -329,10 +330,65 @@ function afterPlay(p,cs){removeCards(p,cs);lastPlay=[...cs];lastPlayer=p;passes=
 function doPass(p){passes++;log(`${NAMES[p]} 패스`);if(passes>=3){turn=lastPlayer;lastPlay=null;passes=0;log(`${NAMES[turn]} 새 판 시작`)}else turn=(p+1)%4;render();if(onlineMode){pushState();if(isHost)maybeRunAI()}else if(turn!==0)setTimeout(aiTurn,400)}
 function combos(arr,n){let out=[];function rec(start,pick){if(pick.length===n){out.push([...pick]);return}for(let i=start;i<arr.length;i++){pick.push(arr[i]);rec(i+1,pick);pick.pop()}}rec(0,[]);return out}
 function legalCombos(hand){let ns=lastPlay?[lastPlay.length]:[1,2,3,5],out=[];ns.forEach(n=>{if(n>hand.length)return;for(const cs of combos(hand,n))if(legalPlay(cs))out.push(cs)});return out.sort((a,b)=>{let ca=classify(a),cb=classify(b);if(a.length===5&&ca.level!==cb.level)return ca.level-cb.level;return ca.key-cb.key})}
-function aiTurn(){if(gameOver||(onlineMode&&(!isHost||playerTypes[turn]!=='ai'))||(!onlineMode&&turn===0))return;let p=turn,opts=legalCombos(hands[p]);if(!opts.length){doPass(p);return}let idx=hands[p].length<=4&&opts.length>1?1:0;afterPlay(p,opts[idx])} function maybeRunAI(){if(!onlineMode||!isHost||gameOver)return;if(playerTypes[turn]==='ai')setTimeout(aiTurn,430)}
+function remainingShapeScore(hand){
+  if(!hand.length)return -10000;
+  const cnt=rankCounts(hand), groups=Object.values(cnt), singles=groups.filter(x=>x===1).length, pairs=groups.filter(x=>x===2).length, triples=groups.filter(x=>x>=3).length;
+  let five=0;
+  if(hand.length>=5){for(const cs of combos(hand,5)){if(classify(cs)){five++;if(five>=4)break}}}
+  return hand.length*18+singles*7-pairs*3-triples*5-five*6;
+}
+function aiCandidateScore(p,cs,mode){
+  const remaining=hands[p].filter(c=>!new Set(cs.map(x=>x.id)).has(c.id));
+  const info=classify(cs), next=(p+1)%4, nextCount=(hands[next]||[]).length;
+  const otherCounts=hands.map((h,i)=>i===p?99:h.length), danger=Math.min(...otherCounts);
+  let score=remainingShapeScore(remaining);
+  // 기본적으로 낮은 카드와 많은 장수를 효율적으로 턴다.
+  score+=cs.reduce((a,c)=>a+cardPower(c),0)*0.12;
+  if(lastPlay===null)score-=cs.length*8;
+  if(remaining.length===0)score-=100000;
+  if(remaining.length>0&&classify(remaining))score-=20;
+  if(mode==='advanced'||mode==='expert'){
+    // 높은 조합(특히 5장 족보)을 불필요하게 깨는 것을 줄인다.
+    if(info&&info.level>=7&&hands[p].length>7)score+=10;
+    // 상대가 거의 끝나면 방어 가치가 커진다.
+    if(danger<=2){score-=info.key*0.32;if(info.level)score-=info.level*2}
+    if(nextCount<=2){score-=info.key*0.45;if(cs.length===nextCount)score-=8}
+  }
+  if(mode==='expert'){
+    // 다음 사람이 1장일 때 싱글은 가능하면 강하게, 2장일 때 페어를 강하게 막는다.
+    if(nextCount===1&&cs.length===1)score-=cardPower(cs[0])*0.75;
+    if(nextCount===2&&cs.length===2)score-=info.key*0.65;
+    // 선을 잡았을 때 여러 장을 한 번에 털고 좋은 잔여 형태를 만드는 플레이 선호.
+    if(lastPlay===null){score-=cs.length*10;if(cs.length===5)score-=6}
+    // 카드가 얼마 안 남으면 공격적으로 마무리.
+    if(hands[p].length<=6)score-=cs.length*7;
+  }
+  return score;
+}
+function chooseAiPlay(p,opts){
+  if(!opts.length)return null;
+  if(aiDifficulty==='beginner')return opts[Math.floor(Math.random()*opts.length)];
+  if(aiDifficulty==='medium'){
+    // 대체로 가장 낮은 합법 패, 끝날 때만 조금 공격적.
+    if(hands[p].length<=4)return opts[Math.min(1,opts.length-1)];
+    return opts[0];
+  }
+  const mode=aiDifficulty==='expert'?'expert':'advanced';
+  let ranked=opts.map(cs=>({cs,score:aiCandidateScore(p,cs,mode)})).sort((a,b)=>a.score-b.score);
+  if(mode==='advanced'&&ranked.length>1&&Math.random()<0.12)return ranked[1].cs;
+  return ranked[0].cs;
+}
+function aiTurn(){
+  if(gameOver||(onlineMode&&(!isHost||playerTypes[turn]!=='ai'))||(!onlineMode&&turn===0))return;
+  let p=turn,opts=legalCombos(hands[p]);
+  if(!opts.length){doPass(p);return}
+  const choice=chooseAiPlay(p,opts);
+  afterPlay(p,choice);
+}
+function maybeRunAI(){if(!onlineMode||!isHost||gameOver)return;if(playerTypes[turn]==='ai')setTimeout(aiTurn,430)}
 function resetGame(){gameOver=false;selected.clear();logLines=[];lastPlay=null;lastPlayer=-1;passes=0;firstMove=true;playedHistory=[];let d=shuffle(deck());hands=[[],[],[],[]];d.forEach((c,i)=>hands[i%4].push(c));hands.forEach(sortHand);turn=hands.findIndex(h=>h.some(c=>c.r==='3'&&c.s==='cloud'));log(`새 게임 · ${NAMES[turn]} 선`);render()}
 function newGame(){onlineMode=false;roomCode=null;mySeat=0;isHost=false;playerTypes=['human','ai','ai','ai'];NAMES=['나','동채','로희','정미'];if(roomUnsub){roomUnsub();roomUnsub=null}if(chatUnsub){chatUnsub();chatUnsub=null}if(pendingJoinUnsub){pendingJoinUnsub();pendingJoinUnsub=null}lastPlayersSnapshot={};chatSeenKeys.clear();chatUnread=0;showChatButton(false);document.getElementById('onlineInfo').style.display='none';resetGame();if(turn!==0)setTimeout(aiTurn,480)}
 function renderProb(){const box=document.getElementById('prob'),cs=selectedCards();if(!cs.length||!classify(cs)){box.innerHTML='<div class="empty" style="grid-column:1/-1">내 패에서 조합을 선택하면 표시됩니다.</div>';return}let known=new Set((hands[mySeat]||[]).map(c=>c.id));if(lastPlay)lastPlay.forEach(c=>known.add(c.id));let unseen=deck().filter(c=>!known.has(c.id)),target=cs,reps=120,rows=[];for(let p=0;p<4;p++){if(p===mySeat)continue;let hit=0;for(let r=0;r<reps;r++){let samp=shuffle([...unseen]).slice(0,hands[p].length),found=false;if(target.length<=3){for(const x of combos(samp,target.length)){if(beats(x,target)){found=true;break}}}else{let cc=combos(samp,5),lim=Math.min(cc.length,100);for(let i=0;i<lim;i++){if(beats(cc[i],target)){found=true;break}}}if(found)hit++}let pct=Math.round(hit/reps*100);rows.push(`<div class="probRow"><b>${NAMES[p]}</b> ${pct}%<div class="meter"><div class="fill" style="width:${pct}%"></div></div></div>`)}box.innerHTML=rows.join('')}
 document.getElementById('playBtn').onclick=()=>{if(turn!==mySeat||gameOver)return;let cs=selectedCards();if(!legalPlay(cs)){let msg=cs.length===0?'낼 카드를 먼저 선택하세요.':firstMove?'첫 수에는 반드시 3구름을 포함해야 합니다.':lastPlay&&cs.length!==lastPlay.length?`앞 패와 같은 ${lastPlay.length}장을 내야 합니다.`:'현재 나온 패보다 높은 조합만 낼 수 있습니다.';document.getElementById('playError').textContent='⚠ '+msg;return}selected.clear();afterPlay(mySeat,cs)};
-document.getElementById('passBtn').onclick=()=>{if(turn===mySeat&&lastPlay){selected.clear();doPass(mySeat)}};document.getElementById('hintBtn').onclick=()=>{if(turn!==mySeat||gameOver)return;let opts=legalCombos(hands[mySeat]);if(!opts.length){log('추천: 패스');return}selected=new Set(opts[0].map(c=>c.id));render()};document.getElementById('newBtn').onclick=newGame;document.getElementById('createRoomBtn').onclick=createRoom;document.getElementById('joinRoomBtn').onclick=()=>openJoinModal();document.getElementById('joinCancel').onclick=closeJoinModal;document.getElementById('joinOk').onclick=()=>joinRoom();document.getElementById('joinModal').onclick=e=>{if(e.target.id==='joinModal')closeJoinModal()};document.getElementById('chatFab').onclick=openChat;document.getElementById('chatClose').onclick=closeChat;document.getElementById('chatSend').onclick=sendChat;document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}});newGame();const inviteCode=new URLSearchParams(location.search).get('room');if(inviteCode)setTimeout(()=>openJoinModal(inviteCode),250);
+document.getElementById('passBtn').onclick=()=>{if(turn===mySeat&&lastPlay){selected.clear();doPass(mySeat)}};document.getElementById('hintBtn').onclick=()=>{if(turn!==mySeat||gameOver)return;let opts=legalCombos(hands[mySeat]);if(!opts.length){log('추천: 패스');return}selected=new Set(opts[0].map(c=>c.id));render()};const aiSel=document.getElementById('aiDifficulty');aiSel.value=aiDifficulty;aiSel.onchange=()=>{aiDifficulty=aiSel.value;localStorage.setItem('lexioAiDifficulty',aiDifficulty);log('AI 난이도 → '+({beginner:'초급',medium:'중급',advanced:'고급',expert:'최상급'}[aiDifficulty]));if(onlineMode&&isHost)pushState()};document.getElementById('newBtn').onclick=newGame;document.getElementById('createRoomBtn').onclick=createRoom;document.getElementById('joinRoomBtn').onclick=()=>openJoinModal();document.getElementById('joinCancel').onclick=closeJoinModal;document.getElementById('joinOk').onclick=()=>joinRoom();document.getElementById('joinModal').onclick=e=>{if(e.target.id==='joinModal')closeJoinModal()};document.getElementById('chatFab').onclick=openChat;document.getElementById('chatClose').onclick=closeChat;document.getElementById('chatSend').onclick=sendChat;document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}});newGame();const inviteCode=new URLSearchParams(location.search).get('room');if(inviteCode)setTimeout(()=>openJoinModal(inviteCode),250);
 </script></body></html>
