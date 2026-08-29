@@ -60,6 +60,8 @@ let onlineMode=false,roomCode=null,mySeat=0,isHost=false,db=null,roomUnsub=null,
 const CLIENT_ID=(()=>{let v=localStorage.getItem('lexioClientId');if(!v){v='c_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);localStorage.setItem('lexioClientId',v)}return v})();
 let chatUnsub=null,chatOpen=false,chatUnread=0,chatSeenKeys=new Set();
 let hands=[],turn=0,selected=new Set(),lastPlay=null,lastPlayer=-1,passes=0,gameOver=false,logLines=[],firstMove=true,playedHistory=[];
+let currentInviteToken=null, activeInviteToken=null;
+function makeInviteToken(){try{const a=new Uint32Array(4);crypto.getRandomValues(a);return Array.from(a,x=>x.toString(36)).join('')}catch(e){return Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)}}
 function suitIcon(k){const col={sun:'#db3d2d',moon:'#1e7c3d',star:'#d36b10',cloud:'#111'}[k]; if(k==='sun')return `<svg viewBox="0 0 100 100"><g fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round"><circle cx="50" cy="50" r="21"/><path d="M50 5v14M50 81v14M5 50h14M81 50h14M18 18l10 10M72 72l10 10M82 18L72 28M28 72L18 82"/></g></svg>`; if(k==='moon')return `<svg viewBox="0 0 100 100"><path fill="${col}" d="M69 10a42 42 0 1 0 18 68A35 35 0 1 1 69 10z"/></svg>`; if(k==='star')return `<svg viewBox="0 0 100 100"><path fill="none" stroke="${col}" stroke-width="8" stroke-linejoin="round" d="M50 7l12 27 29 3-22 20 7 29-26-15-26 15 7-29L9 37l29-3z"/></svg>`; return `<svg viewBox="0 0 100 100"><path fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" d="M18 62c-9 0-14-7-14-15s7-15 16-15c4-14 17-22 31-20 13 2 22 12 24 24 11 0 20 8 20 19 0 10-8 18-18 18H20"/><path fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" d="M50 8v16M44 12l6-7 6 7"/></svg>`}
 async function initFirebase(){if(db)return db;const appMod=await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js');const dbMod=await import('https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js');const firebaseConfig={apiKey:'AIzaSyB7M6E1v7h-b6h-6L1PVXnNGU_vN_6i6dg',authDomain:'lexio-1bca6.firebaseapp.com',projectId:'lexio-1bca6',storageBucket:'lexio-1bca6.firebasestorage.app',messagingSenderId:'575596702985',appId:'1:575596702985:web:7bda82a9ddb6f9a82677d8',databaseURL:'https://lexio-1bca6-default-rtdb.asia-southeast1.firebasedatabase.app'};const app=appMod.initializeApp(firebaseConfig);db=dbMod.getDatabase(app);window.FDB=dbMod;return db}
 
@@ -76,7 +78,7 @@ function roomState(){return{hands,turn,lastPlay,lastPlayer,passes,gameOver,logLi
 async function pushState(){if(!onlineMode||syncing)return;await initFirebase();await window.FDB.set(window.FDB.ref(db,'rooms/'+roomCode+'/game'),roomState())}
 function applyState(g){if(!g)return;syncing=true;hands=g.hands||hands;turn=g.turn??turn;lastPlay=g.lastPlay??null;lastPlayer=g.lastPlayer??-1;passes=g.passes??0;gameOver=!!g.gameOver;logLines=g.logLines||[];firstMove=!!g.firstMove;playedHistory=g.playedHistory||[];NAMES=g.NAMES||NAMES;playerTypes=g.playerTypes||playerTypes;if(g.aiDifficulty){aiDifficulty=g.aiDifficulty;const ds=document.getElementById('aiDifficulty');if(ds)ds.value=aiDifficulty}selected.clear();syncing=false;render();renderLog();if(isHost)maybeRunAI()}
 
-function roomInviteUrl(code){let u=new URL(location.href);u.searchParams.set('room',code);return u.toString()}
+function roomInviteUrl(code,token=currentInviteToken){let u=new URL(location.href);u.searchParams.set('room',code);if(token)u.searchParams.set('invite',token);else u.searchParams.delete('invite');return u.toString()}
 function playerEntries(r){return Object.entries(r.players||{}).map(([seat,p])=>[Number(seat),p]).sort((a,b)=>a[0]-b[0])}
 function freeSeat(r){const ps=r.players||{};return [0,1,2,3].find(x=>!ps[x])}
 function roomIsPlaying(r){return r.status==='playing'||!!r.game}
@@ -197,6 +199,7 @@ async function watchRoom(){
   roomUnsub=window.FDB.onValue(window.FDB.ref(db,'rooms/'+roomCode),snap=>{
     const r=snap.val();if(!r)return;
     resolveMySeatFromRoom(r);
+    if(isHost&&r.inviteToken)currentInviteToken=r.inviteToken;
     syncNamesFromRoom(r);
     if(r.game)applyState(r.game);
     renderOnline(r);
@@ -212,18 +215,19 @@ async function createRoom(){
   await initFirebase();
   onlineMode=true;isHost=true;mySeat=0;
   roomCode=String(Math.floor(1000+Math.random()*9000));
+  currentInviteToken=makeInviteToken();
   NAMES=[name,'AI 2','AI 3','AI 4'];playerTypes=['human','ai','ai','ai'];
   lastPlayersSnapshot={0:{name,seat:0,ready:true,clientId:CLIENT_ID}};
   await window.FDB.set(window.FDB.ref(db,'rooms/'+roomCode),{
-    host:0,status:'lobby',players:{0:{name,seat:0,ready:true,joinedAt:Date.now(),clientId:CLIENT_ID}},createdAt:Date.now()
+    host:0,status:'lobby',inviteToken:currentInviteToken,players:{0:{name,seat:0,ready:true,joinedAt:Date.now(),clientId:CLIENT_ID}},createdAt:Date.now()
   });
   await watchRoom();
   const url=roomInviteUrl(roomCode);
   try{await navigator.clipboard.writeText(url);alert('방을 만들었습니다!\n방 코드: '+roomCode+'\n초대 링크도 복사했습니다.')}catch(e){alert('방을 만들었습니다!\n방 코드: '+roomCode)}
 }
 
-function openJoinModal(code=''){document.getElementById('joinCode').value=code;document.getElementById('joinName').value='';document.getElementById('joinOk').disabled=false;const w=document.getElementById('joinWaiting');if(w)w.remove();document.getElementById('joinModal').classList.add('show');setTimeout(()=>document.getElementById('joinName').focus(),50)}
-function closeJoinModal(){document.getElementById('joinModal').classList.remove('show')}
+function openJoinModal(code='',token=null){activeInviteToken=token;document.getElementById('joinCode').value=code;document.getElementById('joinName').value='';document.getElementById('joinOk').disabled=false;const w=document.getElementById('joinWaiting');if(w)w.remove();document.getElementById('joinModal').classList.add('show');setTimeout(()=>document.getElementById('joinName').focus(),50)}
+function closeJoinModal(){document.getElementById('joinModal').classList.remove('show');activeInviteToken=null}
 
 async function waitForJoinDecision(code,reqId,name){
   if(pendingJoinUnsub)pendingJoinUnsub();
@@ -252,8 +256,11 @@ async function joinRoom(codeArg,nameArg){
   if(!/^\d{4}$/.test(code)){alert('방 코드 4자리를 입력해주세요.');return}
   await initFirebase();
   const rr=window.FDB.ref(db,'rooms/'+code),snap=await window.FDB.get(rr);
-  if(!snap.exists()){alert('없는 방입니다.');return}
-  const r=snap.val(),seat=freeSeat(r);
+  if(!snap.exists()){alert(activeInviteToken?'만료된 초대 링크입니다.':'없는 방입니다.');return}
+  const r=snap.val();
+  if(activeInviteToken&&activeInviteToken!==r.inviteToken){alert('만료된 초대 링크입니다.\n방장에게 새 초대 링크를 받아주세요.');return}
+  if(r.status==='closed'){alert('종료된 방입니다.\n방장에게 새 초대 링크를 받아주세요.');return}
+  const seat=freeSeat(r);
   if(seat===undefined){alert('사람 4명이 모두 찼습니다.');return}
   if(roomIsPlaying(r)){
     const reqRef=window.FDB.push(window.FDB.ref(db,`rooms/${code}/joinRequests`));
@@ -289,9 +296,11 @@ async function startOnlineGame(forceRestart=false){
   playerTypes=[0,1,2,3].map(i=>humanSeats.includes(i)?'human':'ai');
   resetGame();
   const game=roomState();
-  await window.FDB.update(roomRef,{status:'playing',game,startedAt:window.FDB.serverTimestamp()});
+  currentInviteToken=makeInviteToken();
+  await window.FDB.update(roomRef,{status:'playing',game,inviteToken:currentInviteToken,startedAt:window.FDB.serverTimestamp()});
   maybeRunAI();
 }
+async function invalidateInviteOnGameEnd(){if(!onlineMode||!isHost||!roomCode)return;try{await initFirebase();currentInviteToken=makeInviteToken();await window.FDB.update(window.FDB.ref(db,'rooms/'+roomCode),{status:'finished',inviteToken:currentInviteToken,endedAt:window.FDB.serverTimestamp()})}catch(e){}}
 function deck(){let d=[];RANKS.forEach((r,ri)=>SUITS.forEach((s,si)=>d.push({r,ri,s:s.k,si,id:r+'_'+s.k})));return d}
 function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function cardPower(c){return c.ri*4+c.si} function sortHand(h){h.sort((a,b)=>cardPower(a)-cardPower(b))}
@@ -326,7 +335,7 @@ function render(){
   renderProb();
 }
 function selectedCards(){return(hands[mySeat]||[]).filter(c=>selected.has(c.id))} function removeCards(p,cs){let ids=new Set(cs.map(c=>c.id));hands[p]=hands[p].filter(c=>!ids.has(c.id))}
-function afterPlay(p,cs){removeCards(p,cs);lastPlay=[...cs];lastPlayer=p;passes=0;firstMove=false;playedHistory.push({p,cs:[...cs]});log(`<b>${NAMES[p]}</b> → ${classify(cs).name}`);if(hands[p].length===0){gameOver=true;document.getElementById('status').innerHTML=`${NAMES[p]} 승리!`;render();if(onlineMode)pushState();return}turn=(p+1)%4;render();if(onlineMode){pushState();if(isHost)maybeRunAI()}else if(turn!==0)setTimeout(aiTurn,430)}
+function afterPlay(p,cs){removeCards(p,cs);lastPlay=[...cs];lastPlayer=p;passes=0;firstMove=false;playedHistory.push({p,cs:[...cs]});log(`<b>${NAMES[p]}</b> → ${classify(cs).name}`);if(hands[p].length===0){gameOver=true;document.getElementById('status').innerHTML=`${NAMES[p]} 승리!`;render();if(onlineMode){pushState();if(isHost)invalidateInviteOnGameEnd()}return}turn=(p+1)%4;render();if(onlineMode){pushState();if(isHost)maybeRunAI()}else if(turn!==0)setTimeout(aiTurn,430)}
 function doPass(p){passes++;log(`${NAMES[p]} 패스`);if(passes>=3){turn=lastPlayer;lastPlay=null;passes=0;log(`${NAMES[turn]} 새 판 시작`)}else turn=(p+1)%4;render();if(onlineMode){pushState();if(isHost)maybeRunAI()}else if(turn!==0)setTimeout(aiTurn,400)}
 function combos(arr,n){let out=[];function rec(start,pick){if(pick.length===n){out.push([...pick]);return}for(let i=start;i<arr.length;i++){pick.push(arr[i]);rec(i+1,pick);pick.pop()}}rec(0,[]);return out}
 function legalCombos(hand){let ns=lastPlay?[lastPlay.length]:[1,2,3,5],out=[];ns.forEach(n=>{if(n>hand.length)return;for(const cs of combos(hand,n))if(legalPlay(cs))out.push(cs)});return out.sort((a,b)=>{let ca=classify(a),cb=classify(b);if(a.length===5&&ca.level!==cb.level)return ca.level-cb.level;return ca.key-cb.key})}
@@ -387,8 +396,8 @@ function aiTurn(){
 }
 function maybeRunAI(){if(!onlineMode||!isHost||gameOver)return;if(playerTypes[turn]==='ai')setTimeout(aiTurn,430)}
 function resetGame(){gameOver=false;selected.clear();logLines=[];lastPlay=null;lastPlayer=-1;passes=0;firstMove=true;playedHistory=[];let d=shuffle(deck());hands=[[],[],[],[]];d.forEach((c,i)=>hands[i%4].push(c));hands.forEach(sortHand);turn=hands.findIndex(h=>h.some(c=>c.r==='3'&&c.s==='cloud'));log(`새 게임 · ${NAMES[turn]} 선`);render()}
-function newGame(){onlineMode=false;roomCode=null;mySeat=0;isHost=false;playerTypes=['human','ai','ai','ai'];NAMES=['나','동채','로희','정미'];if(roomUnsub){roomUnsub();roomUnsub=null}if(chatUnsub){chatUnsub();chatUnsub=null}if(pendingJoinUnsub){pendingJoinUnsub();pendingJoinUnsub=null}lastPlayersSnapshot={};chatSeenKeys.clear();chatUnread=0;showChatButton(false);document.getElementById('onlineInfo').style.display='none';resetGame();if(turn!==0)setTimeout(aiTurn,480)}
+async function newGame(){const oldOnline=onlineMode,oldHost=isHost,oldRoom=roomCode;if(oldOnline&&oldHost&&oldRoom){try{await initFirebase();await window.FDB.update(window.FDB.ref(db,'rooms/'+oldRoom),{status:'closed',inviteToken:makeInviteToken(),game:null,endedAt:window.FDB.serverTimestamp()})}catch(e){}}onlineMode=false;roomCode=null;mySeat=0;isHost=false;currentInviteToken=null;activeInviteToken=null;playerTypes=['human','ai','ai','ai'];NAMES=['나','동채','로희','정미'];if(roomUnsub){roomUnsub();roomUnsub=null}if(chatUnsub){chatUnsub();chatUnsub=null}if(pendingJoinUnsub){pendingJoinUnsub();pendingJoinUnsub=null}lastPlayersSnapshot={};chatSeenKeys.clear();chatUnread=0;showChatButton(false);document.getElementById('onlineInfo').style.display='none';resetGame();if(turn!==0)setTimeout(aiTurn,480)}
 function renderProb(){const box=document.getElementById('prob'),cs=selectedCards();if(!cs.length||!classify(cs)){box.innerHTML='<div class="empty" style="grid-column:1/-1">내 패에서 조합을 선택하면 표시됩니다.</div>';return}let known=new Set((hands[mySeat]||[]).map(c=>c.id));if(lastPlay)lastPlay.forEach(c=>known.add(c.id));let unseen=deck().filter(c=>!known.has(c.id)),target=cs,reps=120,rows=[];for(let p=0;p<4;p++){if(p===mySeat)continue;let hit=0;for(let r=0;r<reps;r++){let samp=shuffle([...unseen]).slice(0,hands[p].length),found=false;if(target.length<=3){for(const x of combos(samp,target.length)){if(beats(x,target)){found=true;break}}}else{let cc=combos(samp,5),lim=Math.min(cc.length,100);for(let i=0;i<lim;i++){if(beats(cc[i],target)){found=true;break}}}if(found)hit++}let pct=Math.round(hit/reps*100);rows.push(`<div class="probRow"><b>${NAMES[p]}</b> ${pct}%<div class="meter"><div class="fill" style="width:${pct}%"></div></div></div>`)}box.innerHTML=rows.join('')}
 document.getElementById('playBtn').onclick=()=>{if(turn!==mySeat||gameOver)return;let cs=selectedCards();if(!legalPlay(cs)){let msg=cs.length===0?'낼 카드를 먼저 선택하세요.':firstMove?'첫 수에는 반드시 3구름을 포함해야 합니다.':lastPlay&&cs.length!==lastPlay.length?`앞 패와 같은 ${lastPlay.length}장을 내야 합니다.`:'현재 나온 패보다 높은 조합만 낼 수 있습니다.';document.getElementById('playError').textContent='⚠ '+msg;return}selected.clear();afterPlay(mySeat,cs)};
-document.getElementById('passBtn').onclick=()=>{if(turn===mySeat&&lastPlay){selected.clear();doPass(mySeat)}};document.getElementById('hintBtn').onclick=()=>{if(turn!==mySeat||gameOver)return;let opts=legalCombos(hands[mySeat]);if(!opts.length){log('추천: 패스');return}selected=new Set(opts[0].map(c=>c.id));render()};const aiSel=document.getElementById('aiDifficulty');aiSel.value=aiDifficulty;aiSel.onchange=()=>{aiDifficulty=aiSel.value;localStorage.setItem('lexioAiDifficulty',aiDifficulty);log('AI 난이도 → '+({beginner:'초급',medium:'중급',advanced:'고급',expert:'최상급'}[aiDifficulty]));if(onlineMode&&isHost)pushState()};document.getElementById('newBtn').onclick=newGame;document.getElementById('createRoomBtn').onclick=createRoom;document.getElementById('joinRoomBtn').onclick=()=>openJoinModal();document.getElementById('joinCancel').onclick=closeJoinModal;document.getElementById('joinOk').onclick=()=>joinRoom();document.getElementById('joinModal').onclick=e=>{if(e.target.id==='joinModal')closeJoinModal()};document.getElementById('chatFab').onclick=openChat;document.getElementById('chatClose').onclick=closeChat;document.getElementById('chatSend').onclick=sendChat;document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}});newGame();const inviteCode=new URLSearchParams(location.search).get('room');if(inviteCode)setTimeout(()=>openJoinModal(inviteCode),250);
+document.getElementById('passBtn').onclick=()=>{if(turn===mySeat&&lastPlay){selected.clear();doPass(mySeat)}};document.getElementById('hintBtn').onclick=()=>{if(turn!==mySeat||gameOver)return;let opts=legalCombos(hands[mySeat]);if(!opts.length){log('추천: 패스');return}selected=new Set(opts[0].map(c=>c.id));render()};const aiSel=document.getElementById('aiDifficulty');aiSel.value=aiDifficulty;aiSel.onchange=()=>{aiDifficulty=aiSel.value;localStorage.setItem('lexioAiDifficulty',aiDifficulty);log('AI 난이도 → '+({beginner:'초급',medium:'중급',advanced:'고급',expert:'최상급'}[aiDifficulty]));if(onlineMode&&isHost)pushState()};document.getElementById('newBtn').onclick=newGame;document.getElementById('createRoomBtn').onclick=createRoom;document.getElementById('joinRoomBtn').onclick=()=>openJoinModal();document.getElementById('joinCancel').onclick=closeJoinModal;document.getElementById('joinOk').onclick=()=>joinRoom();document.getElementById('joinModal').onclick=e=>{if(e.target.id==='joinModal')closeJoinModal()};document.getElementById('chatFab').onclick=openChat;document.getElementById('chatClose').onclick=closeChat;document.getElementById('chatSend').onclick=sendChat;document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}});newGame();const inviteParams=new URLSearchParams(location.search),inviteCode=inviteParams.get('room'),inviteToken=inviteParams.get('invite');if(inviteCode)setTimeout(()=>openJoinModal(inviteCode,inviteToken),250);
 </script></body></html>
