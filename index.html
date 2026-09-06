@@ -82,7 +82,7 @@ function roomState(){return{hands,turn,lastPlay,lastPlayer,passes,gameOver,logLi
 async function pushState(){if(!onlineMode||syncing)return;await initFirebase();await window.FDB.set(window.FDB.ref(db,'rooms/'+roomCode+'/game'),roomState())}
 function applyState(g){if(!g)return;syncing=true;hands=g.hands||hands;turn=g.turn??turn;lastPlay=g.lastPlay??null;lastPlayer=g.lastPlayer??-1;passes=g.passes??0;gameOver=!!g.gameOver;logLines=g.logLines||[];firstMove=!!g.firstMove;playedHistory=g.playedHistory||[];NAMES=g.NAMES||NAMES;playerTypes=g.playerTypes||playerTypes;if(g.aiDifficulty){aiDifficulty=g.aiDifficulty;const ds=document.getElementById('aiDifficulty');if(ds)ds.value=aiDifficulty}selected.clear();syncing=false;render();renderLog();if(isHost)maybeRunAI()}
 
-function roomInviteUrl(code,token=currentInviteToken){let u=new URL(location.origin+location.pathname);u.searchParams.set('room',code);if(token)u.searchParams.set('invite',token);u.searchParams.set('build','20260906-sync2');return u.toString()}
+function roomInviteUrl(code,token=currentInviteToken){let u=new URL(location.origin+location.pathname);u.searchParams.set('room',code);if(token)u.searchParams.set('invite',token);u.searchParams.set('build','20260906-joinfix3');return u.toString()}
 function playerEntries(r){return Object.entries(r.players||{}).map(([seat,p])=>[Number(seat),p]).sort((a,b)=>a[0]-b[0])}
 function freeSeat(r){const ps=r.players||{};return [0,1,2,3].find(x=>!ps[x])}
 function roomIsPlaying(r){return r.status==='playing'||!!r.game}
@@ -118,9 +118,10 @@ async function setReady(ready){
 }
 
 async function configureDisconnect(){
-  if(!onlineMode||!roomCode)return;
-  await initFirebase();
-  try{await window.FDB.onDisconnect(window.FDB.ref(db,`rooms/${roomCode}/players/${mySeat}`)).remove()}catch(e){}
+  // 모바일 브라우저는 화면 전환/백그라운드만으로도 Firebase 연결이 잠깐 끊길 수 있다.
+  // 기존 onDisconnect().remove()는 이 순간 참가자를 방에서 지워버리는 문제가 있어 사용하지 않는다.
+  // 참가자 자리는 명시적으로 방을 나갈 때만 제거하도록 유지한다.
+  return;
 }
 
 async function rejectJoinRequest(reqId){
@@ -291,6 +292,7 @@ async function joinRoom(codeArg,nameArg){
   if(!verify.exists()){onlineMode=false;roomCode=null;alert('참가 등록에 실패했습니다. 다시 참가해주세요.');return}
   closeJoinModal();
   await watchRoom();
+  alert('참가 완료!\n방장 화면에 내 이름이 표시됩니다.');
 }
 
 async function startOnlineGame(forceRestart=false){
