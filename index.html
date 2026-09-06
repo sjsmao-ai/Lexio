@@ -82,7 +82,7 @@ function roomState(){return{hands,turn,lastPlay,lastPlayer,passes,gameOver,logLi
 async function pushState(){if(!onlineMode||syncing)return;await initFirebase();await window.FDB.set(window.FDB.ref(db,'rooms/'+roomCode+'/game'),roomState())}
 function applyState(g){if(!g)return;syncing=true;hands=g.hands||hands;turn=g.turn??turn;lastPlay=g.lastPlay??null;lastPlayer=g.lastPlayer??-1;passes=g.passes??0;gameOver=!!g.gameOver;logLines=g.logLines||[];firstMove=!!g.firstMove;playedHistory=g.playedHistory||[];NAMES=g.NAMES||NAMES;playerTypes=g.playerTypes||playerTypes;if(g.aiDifficulty){aiDifficulty=g.aiDifficulty;const ds=document.getElementById('aiDifficulty');if(ds)ds.value=aiDifficulty}selected.clear();syncing=false;render();renderLog();if(isHost)maybeRunAI()}
 
-function roomInviteUrl(code,token=currentInviteToken){let u=new URL(location.origin+location.pathname);u.searchParams.set('room',code);if(token)u.searchParams.set('invite',token);u.searchParams.set('build','20260906-sync1');return u.toString()}
+function roomInviteUrl(code,token=currentInviteToken){let u=new URL(location.origin+location.pathname);u.searchParams.set('room',code);if(token)u.searchParams.set('invite',token);u.searchParams.set('build','20260906-sync2');return u.toString()}
 function playerEntries(r){return Object.entries(r.players||{}).map(([seat,p])=>[Number(seat),p]).sort((a,b)=>a[0]-b[0])}
 function freeSeat(r){const ps=r.players||{};return [0,1,2,3].find(x=>!ps[x])}
 function roomIsPlaying(r){return r.status==='playing'||!!r.game}
@@ -168,7 +168,9 @@ function renderOnline(r){
   const readyButton=(!isHost&&!playing)?`<button class="readyBtn ${(r.players?.[mySeat]?.ready)?'':'off'}" id="readyToggleBtn">${r.players?.[mySeat]?.ready?'준비 취소':'준비'}</button>`:'';
   const startButton=(isHost&&!playing)?'<button class="miniBtn" id="startOnlineBtn" style="padding:3px 7px">게임 시작</button>':'';
   const copyButton=isHost?'<button class="miniBtn" id="copyInviteBtn" style="padding:3px 7px">초대 링크 복사</button>':'';
-  oi.innerHTML=`방 코드 <b>${roomCode}</b> · ${playing?'<b>게임 진행 중</b>':'대기실'} · 나는 <b>${safeName(r.players?.[mySeat]?.name||NAMES[mySeat])}</b> (${mySeat+1}번 자리) ${copyButton} ${startButton} ${readyButton}<div class="lobbyStatus">${chips}</div>${reqHtml}`;
+  const latestJoin=Object.values(r.joinEvents||{}).sort((a,b)=>(b.joinedAt||0)-(a.joinedAt||0))[0];
+  const joinBanner=(isHost&&latestJoin&&Date.now()-(latestJoin.joinedAt||0)<120000)?`<div class="joinNotice" style="margin-top:7px;padding:7px 9px;border-radius:9px;background:#eaf7ee;font-weight:700">✅ ${safeName(latestJoin.name)}님이 참가했습니다. (${Number(latestJoin.seat)+1}번 자리)</div>`:'';
+  oi.innerHTML=`방 코드 <b>${roomCode}</b> · ${playing?'<b>게임 진행 중</b>':'대기실'} · 나는 <b>${safeName(r.players?.[mySeat]?.name||NAMES[mySeat])}</b> (${mySeat+1}번 자리) ${copyButton} ${startButton} ${readyButton}<div class="lobbyStatus">${chips}</div>${joinBanner}${reqHtml}`;
 
   const b=document.getElementById('startOnlineBtn'); if(b)b.onclick=()=>startOnlineGame(false);
   const rb=document.getElementById('readyToggleBtn'); if(rb)rb.onclick=()=>setReady(!r.players?.[mySeat]?.ready);
@@ -277,7 +279,16 @@ async function joinRoom(codeArg,nameArg){
     return;
   }
   onlineMode=true;isHost=false;roomCode=code;mySeat=seat;NAMES[seat]=name;
-  await window.FDB.set(window.FDB.ref(db,`rooms/${code}/players/${seat}`),{name,seat,ready:false,joinedAt:Date.now(),clientId:CLIENT_ID});
+  // 참가자 등록과 참가 알림을 한 번에 저장해서 방장 화면에 즉시 반영한다.
+  const joinedAt=Date.now();
+  const joinEventRef=window.FDB.push(window.FDB.ref(db,`rooms/${code}/joinEvents`));
+  const updates={};
+  updates[`players/${seat}`]={name,seat,ready:false,joinedAt,clientId:CLIENT_ID};
+  updates[`joinEvents/${joinEventRef.key}`]={name,seat,clientId:CLIENT_ID,joinedAt};
+  await window.FDB.update(rr,updates);
+  // 실제로 참가자 데이터가 저장됐는지 확인한다. 실패하면 참가 성공처럼 넘어가지 않는다.
+  const verify=await window.FDB.get(window.FDB.ref(db,`rooms/${code}/players/${seat}`));
+  if(!verify.exists()){onlineMode=false;roomCode=null;alert('참가 등록에 실패했습니다. 다시 참가해주세요.');return}
   closeJoinModal();
   await watchRoom();
 }
